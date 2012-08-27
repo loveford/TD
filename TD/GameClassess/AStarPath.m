@@ -10,6 +10,8 @@
 
 #import "AStarPath.h"
 #import "TilePoint.h"
+#import "DataModel.h"
+#import "Tower.h"
 
 @implementation AStarPath
 @synthesize startPoint = _startPoint;
@@ -194,19 +196,32 @@
 
 - (BOOL)isEnableTile:(TilePoint *)tilePoint
 {
-	CCTMXTiledMap *map = [CCTMXTiledMap tiledMapWithTMXFile:@"tile_map.tmx"];
-	CCTMXLayer *layer = [map layerNamed:@"layer0"];
+	CCTMXTiledMap *map = [CCTMXTiledMap tiledMapWithTMXFile:@"AStarMap.tmx"];
+	CCTMXLayer *layer = [map layerNamed:@"Background"];
 	
-	if (tilePoint.x < 0 || tilePoint.y < 0 || tilePoint.x > 22 || tilePoint.y > 15) {
+	if (tilePoint.x < 0 || tilePoint.y < 0 || tilePoint.x > 30 || tilePoint.y > 20) {
 		
 		return NO;
 	}else {
         
 		int gid = [layer tileGIDAt:ccp(tilePoint.x,tilePoint.y)];
-        		if (gid == 2) {
+        
+        NSDictionary *props = [map propertiesForGID:gid];
+        NSString *type = [props valueForKey:@"buildable"];
+        if ([type isEqualToString:@"0"]) {
         			return NO;
-        	}else {
-        return YES;
+        }else {
+//            判断是否有炮塔在此
+            DataModel *model = [DataModel getModel];
+            for (Tower *tower in model._towers) {
+                CGPoint point = ccp((tilePoint.x *32) +16, map.contentSize.height - (tilePoint.y *32) -16);
+                NSLog(@"point is %@",NSStringFromCGPoint(point));
+                NSLog(@"towerPosition is %@",NSStringFromCGPoint(tower.position));
+                if (CGPointEqualToPoint(point,tower.position)) {
+                    return NO;
+                }
+            }
+            return YES;
 		}
 		
 	}

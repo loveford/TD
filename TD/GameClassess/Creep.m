@@ -106,7 +106,7 @@
     StrongGreenCreep *creep = nil;
     if ((creep = [[[super alloc] initWithFile:@"Enemy2.png"] autorelease])) {
         creep.hp = 20;
-        creep.moveDuration = 9;
+        creep.moveDuration = 29;
 		creep.curWaypoint = 0;
     }
     return creep;

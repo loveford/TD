@@ -19,6 +19,7 @@
 @synthesize background = _background;
 
 @synthesize currentLevel = _currentLevel;
+@synthesize path = _path;
 +(id) scene
 {
 	// 'scene' is an autorelease object.
@@ -44,7 +45,7 @@
 
 // on "init" you need to initialize your instance
 -(id) init {
-    if((self = [super init])) {				
+    if((self = [super init])) {
 		self.tileMap = [CCTMXTiledMap tiledMapWithTMXFile:@"AStarMap.tmx"];
         self.background = [_tileMap layerNamed:@"Background"];
 		self.background.anchorPoint = ccp(0, 0);
@@ -53,9 +54,23 @@
 		[self addWaypoint];
 		[self addWaves];
 		
+        //    初始化path
+        DataModel *m = [DataModel getModel];
+        self.path = [[AStarPath alloc] initWithTileCount:60];
+        WayPoint *startWay = [m._waypoints objectAtIndex:0];
+        WayPoint *endWay = [m._waypoints lastObject];
+        CGPoint startPoint = [self tileCoordForPosition:startWay.position];
+        CGPoint endPoint = [self tileCoordForPosition:endWay.position];
+        TilePoint *startTile = [[TilePoint alloc] createTilePoint:startPoint.x Y:startPoint.y];
+        TilePoint *endTile = [[TilePoint alloc] createTilePoint:endPoint.x Y:endPoint.y];
+        [self.path start:startTile EndPoint:endTile];
+        [startTile release];
+        [endTile release];
+        
 		// Call game logic about every second
         [self schedule:@selector(update:)];
-		[self schedule:@selector(gameLogic:) interval:1.0];		
+		[self schedule:@selector(gameLogic:) interval:1.0];
+
 		
 		self.currentLevel = 0;
 		
@@ -138,6 +153,7 @@
 	WayPoint *waypoint = [target getCurrentWaypoint ];
 	target.position = waypoint.position;	
 	waypoint = [target getNextWaypoint ];
+
 	
 	[self addChild:target z:1];
 	
@@ -226,6 +242,9 @@
 // on "dealloc" you need to release all your retained objects
 - (void) dealloc
 {
+    [_path release];
+    [_tileMap release];
+    [_background release];
 	[super dealloc];
 }
 
@@ -274,9 +293,14 @@
     int tileGid = [self.background tileGIDAt:towerLoc];
     NSDictionary *props = [self.tileMap propertiesForGID:tileGid];
     NSString *type = [props valueForKey:@"buildable"];
-    TilePoint *endPoint = [[TilePoint alloc] createTilePoint:30 Y:15];
     
     DataModel *m = [DataModel getModel];
+    WayPoint *endWay = [m._waypoints lastObject];
+    CGPoint endPointTile = [self tileCoordForPosition:endWay.position];
+    
+    TilePoint *endPoint = [[TilePoint alloc] createTilePoint:endPointTile.x Y:endPointTile.y];
+    
+    
     
     if([type isEqualToString: @"1"]) {
 //        判断同一位置是否已经有炮塔存在
@@ -287,16 +311,32 @@
             }
         }
 //        判断是否有一条路径能到达终点
-        for (Creep *target in m._targets) {
-            [target reloadPathToEndPoint:endPoint];
-            if (!target.path.closeTable.count) {
-                return NO;
-            }
+        [self reloadPathToEndPoint:endPoint];
+        NSLog(@"step count is %d",self.path.closeTable.count);
+        if (!self.path.closeTable.count) {
+            return NO;
         }
+
+//        for (Creep *target in m._targets) {
+//            [target reloadPathToEndPoint:endPoint];
+//            NSLog(@"step count is %d",target.path.closeTable.count);
+//            if (!target.path.closeTable.count) {
+//                return NO;
+//            }
+//        }
         return YES;
     }
     [endPoint release];
     return NO;
+}
+
+//重新计算路径
+- (void)reloadPathToEndPoint:(TilePoint *)endPoint
+{
+    CGPoint tileLocation = [self tileCoordForPosition:self.position];
+    TilePoint *startPoint = [[TilePoint alloc] createTilePoint:tileLocation.x Y:tileLocation.y];
+    [self.path start:startPoint EndPoint:endPoint];
+    [startPoint release];
 }
 
 - (void)update:(ccTime)dt {

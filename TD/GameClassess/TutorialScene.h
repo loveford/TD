@@ -15,6 +15,8 @@
 #import "Wave.h"
 #import "GameHUD.h"
 #import "Projectile.h"
+#import "AStarPath.h"
+#import "TilePoint.h"
 
 // Tutorial Layer
 @interface Tutorial : CCLayer
@@ -27,6 +29,8 @@
 
 @property (nonatomic, retain) CCTMXTiledMap *tileMap;
 @property (nonatomic, retain) CCTMXLayer *background;
+@property (nonatomic, retain) AStarPath *path;
+
 
 @property (nonatomic, assign) int currentLevel;
 

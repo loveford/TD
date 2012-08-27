@@ -22,4 +22,5 @@
 
 - (BOOL)isComparePoint:(TilePoint *)p1 And:(TilePoint *)p2;
 - (void)start:(TilePoint *)startPoint_ EndPoint:(TilePoint *)endPoint_;
+- (id)initWithTileCount:(NSInteger)tileCount;
 @end
